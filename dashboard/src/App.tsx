@@ -4,6 +4,7 @@ import './App.css'
 function App() {
 
   const [data, setData] = useState();
+  
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:4321/ws");
 
