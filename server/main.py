@@ -11,14 +11,14 @@ load_dotenv()
 
 queue = asyncio.Queue()
 async def consume():
-    consumer = AIOKafkaConsumer('trade-data',
+    consumer = AIOKafkaConsumer('trade-bids',
                                 bootstrap_servers=os.getenv("KAFKA_URL") + ":" + os.getenv("KAFKA_PORT"),
-                                group_id="mygroup", 
+                                group_id="my-group", 
                                 auto_offset_reset="latest")
     try:
         await consumer.start()
     except Exception:
-        print("FAILURE CONNECTING TO FAKFA")
+        print("FAILURE CONNECTING TO KAFKA")
     print("Started consumer?")
     try:
         async for msg in consumer:
