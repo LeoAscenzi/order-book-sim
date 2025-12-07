@@ -1,4 +1,12 @@
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - backend
   broker:
     image: apache/kafka:latest
     hostname: broker
@@ -26,8 +34,6 @@ services:
       context: "../generatedata"
       dockerfile: Dockerfile
     container_name: generatedata
-    ports:
-      - 8080:8000
 networks:
-  default:
-    name: backend
+  backend:
+    driver: bridge

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 docker compose -f "../deployments/docker-compose.yml" build broker
 docker compose -f "../deployments/docker-compose.yml" build generatedata
+docker compose -f "../deployments/docker-compose.yml" build nginx
 echo "Starting Kafka broker container and then waiting 3 seconds"
 docker compose -f "../deployments/docker-compose.yml" up -d
 sleep 2
@@ -11,4 +12,4 @@ echo "Created trade topics, beginning producer loop in container"
 sleep 3
 
 docker build -t consumer:latest ../server/
-docker run -d --network backend -p 8081:8000 --name consumer consumer
+docker run -d --network backend --name consumer consumer
