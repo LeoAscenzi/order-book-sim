@@ -7,7 +7,7 @@ from confluent_kafka import Producer
 
 
 trade_type: list = ['Bid', 'Ask']
-sec_labels: list = ["RTX", "MLP"]
+sec_labels: list = ["RTX", "MLP", "NVDA", "TSLA", "PLTR"]
 
 def connect_and_send(data_count: int, delay: float):
     p = Producer({'bootstrap.servers': 'broker:29092'})
