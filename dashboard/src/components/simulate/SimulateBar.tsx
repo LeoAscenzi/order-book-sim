@@ -41,16 +41,19 @@ const SimulateBar = ({count, delay, isLoading, setCount, setDelay, setIsLoading,
     {
         if(count && delay){
             try{
+                
                 setIsLoading(true);
-                setProducerRate(0);
-                setConsumerRate(0);
                 // Prepare stats and set counts to 0
                 const isReady = await fetch(`${import.meta.env.VITE_CONSUMER_HTTP_URL}/prepare-stats?data_count=${count}`, {method: "POST"})
                 const {status} = await isReady.json();
                 if(status == "not_ready"){
                     alert("App Still Consuming Data");
+                    setIsLoading(false);
                 }
                 else{
+                    setTestStatus("running")
+                    setProducerRate(0);
+                    setConsumerRate(0);
                     // Start test
                     const data = await fetch(`${import.meta.env.VITE_PRODUCER_HTTP_URL}/createdata?data_count=${count}&delay=${delay}`, {method: "POST"})
                     const testResult = await data.json()

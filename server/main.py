@@ -97,7 +97,7 @@ async def lifespan(app: FastAPI):
     consumer_task.cancel()
     cancel_random.cancel()
     del app.state.count_total
-    del app.state.count_tostart_timetal
+    del app.state.start_time
     del app.state.end_time
     del app.state.target_count
 
@@ -159,7 +159,7 @@ def poll_stats():
 
 @app.post("/prepare-stats")
 def prepare_stats(data_count: int):
-    if(app.state.end_time is None):
+    if(app.state.end_time is None and app.state.start_time is not None):
         return {"status" : "not_ready"}
     app.state.count_total = 0
     app.state.end_time = None
