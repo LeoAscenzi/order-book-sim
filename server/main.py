@@ -3,7 +3,7 @@ import asyncio
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from aiokafka import AIOKafkaConsumer
-import random
+import time
 
 from dotenv import load_dotenv
 import os
@@ -44,14 +44,20 @@ async def consume():
                 else:
                     orderBook.add_order(sc, tp, pr, id)
 
-                # print(orderBook.to_json())
-                # print("\n")
-                
                 #Enqueue the latest update only
                 await queue.put({"security": sc,
                                  "topBid": orderBook.get_top(sc, "Bid"), 
                                  "topAsk": orderBook.get_top(sc, "Ask"), 
                                  "spread": orderBook.get_spread(sc)})
+                
+                # If the stats have just been started, set count to and log start time
+                if(app.state.count_total == 0):
+                    app.state.start_time = time.time()
+                app.state.count_total+=1
+
+                # When we consume the target, stop the test
+                if(app.state.target_count == app.state.count_total):
+                    app.state.end_time = time.time()
         except Exception as e:
             print(f"Disconnected from kafka with: {e}, retrying in {retry_interval} seconds")
             await asyncio.sleep(retry_interval)
@@ -79,6 +85,11 @@ async def cancel():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.count_total = 0
+    app.state.start_time = None
+    app.state.end_time = None
+    app.state.target_count = 0
+
     print("Starting up creating async task")
     consumer_task: asyncio.Task = asyncio.create_task(consume())
     cancel_random: asyncio.Task = asyncio.create_task(cancel())
@@ -124,9 +135,30 @@ def reset_all_data():
     orderBook.cleanup()
     return {"status" : "Cleaned up!"}
 
-@app.get("get-average-rate")
-def get_average_rate():
-    return {"rate": "1"}
+@app.get("/poll-stats")
+def poll_stats():
+    current_time = time.time()
+    status = "not_started"
+    elapsed = 0
+    
+    if(app.state.start_time is not None):
+        status = "running"
+        if(app.state.end_time is not None):
+            current_time = app.state.end_time
+            status = "done"
+        elapsed = current_time - app.state.start_time
+    
+    return {"status": status,
+            "current_count": app.state.count_total, 
+            "elapsed": elapsed}
+
+@app.post("/prepare-stats")
+def prepare_stats(data_count: int):
+    app.state.count_total = 0
+    app.state.end_time = None
+    app.state.target_count = data_count
+    return {"status" : "ready"}
+        
 
 connections: set = set()
 dead_sockets: set = set()
@@ -143,10 +175,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     await socket.send_json(data)
                 except Exception:
                     dead_sockets.add(socket)
-
             for socket in dead_sockets:
                 connections.remove(socket)
-
             dead_sockets.clear()
     except Exception as e:
         print(f"Some error occured: {e}")
