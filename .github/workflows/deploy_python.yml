@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - 'frontend/**'
+      - 'backend/java/**'
 jobs:
   deploy:
     runs-on: ubuntu-latest
